@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActionHandleController;
 use App\Models\AddressDetail;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
@@ -12,6 +13,7 @@ use App\Models\Document;
 use App\Models\Referrals;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Contracts\Service\Attribute\Required;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -83,7 +85,13 @@ Route::put('/edit-beneficiary/{id}', function(Request $request, $id){
     Route::get('/announcement', function(){
         $announcement = Announcement::latest()->get()->take(1);
 
-        return json_encode(['announcement' => $announcement]);
+        if(count($announcement) > 0){
+            return json_encode(['announcement' => $announcement]);
+        }else{
+            return json_encode(['message'=> "No announcement"]);
+        }
+
+
     });
 
     // Upload documents by user
@@ -111,30 +119,7 @@ Route::put('/edit-beneficiary/{id}', function(Request $request, $id){
     });
 
     // address information
-    Route::post('/add-address', function(Request $request){
-        $house = $request->house;
-        $street = $request->street;
-        $address = new AddressDetail();
-        $address->user_id = $request->input('id');
-        $address->state = $request->input('state');
-        $address->lga = $request->input('lga');
-        $address->address = $request->input('address');
-        $address->landmark = $request->input('landmark');
-        $address->house = $house;
-        $address->street = $street;
-
-        try{
-            $address->save();
-            return json_encode(['message'=>'Address verified.']);
-        }catch(Exception $e){
-            return json_encode(['error'=>$e->errorInfo]);
-        }
-
-        // return json_encode(['data'=>$request->house]);
-        // if($address->save()){
-        //     return json_encode(['message'=>'Address verified.']);
-        // }
-    });
+    Route::post('/add-address', [ActionHandleController::class, 'addAddress']);
 
 
     Route::get("/get-address/{id}", function($id){
@@ -161,13 +146,7 @@ Route::post('/new-customer-paystack', function(Request $request){
 });
 
 
-Route::post("/new-login", function(Request $request){
-    $user = User::where("mobile", $request->mobile)->first();
-    if(!$user || !password_verify($request->password, $user->password)){
-        return response(['message' => 'Incorrect credentials, try again.']);
-    }
-    return json_encode(['user'=>$user]);
-});
+Route::post("/new-login", [ActionHandleController::class, 'loginUser']);
 
 
 Route::get("/test", function(){

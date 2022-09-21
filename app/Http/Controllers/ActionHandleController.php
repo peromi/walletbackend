@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AddressDetail;
+use App\Models\User;
+use Carbon\Exceptions\Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class ActionHandleController extends Controller
 {
@@ -16,8 +21,45 @@ class ActionHandleController extends Controller
         //
     }
 
+    public function addAddress(Request $request){
+        $house = $request->house;
+        $street = $request->street;
+        $address = new AddressDetail();
+        $address->user_id = $request->input('id');
+        $address->state = $request->input('state');
+        $address->lga = $request->input('lga');
+        $address->address = $request->input('address');
+        $address->landmark = $request->input('landmark');
+        $address->house = $house;
+        $address->street = $street;
+
+
+            if($address->save()){
+                return json_encode(['message'=>'Address verified.']);
+            }else{
+                return json_encode(['message'=>'Something went wrong']);
+            }
+
+
+
+
+
+    }
+    public function loginUser(Request $request){
+        $this->validate($request,[
+            'mobile' => 'required|numeric|min:11',
+            'password' => 'required',
+        ]);
+
+        $user = User::where("mobile", $request->mobile)->first();
+        if(!$user || !password_verify($request->password, $user->password)){
+            return json_encode(['message' => 'Incorrect credentials, try again.']);
+        }
+        return json_encode(['user'=>$user]);
+    }
+
     public function createNewUser(Request $request){
-        $this->validate($request, [
+    $this->validate($request,[
             'firstname' => 'required|string|max:255',
             'lastname' => 'required|string|max:255',
             'username' => 'required|string|unique:users',
@@ -25,6 +67,9 @@ class ActionHandleController extends Controller
             'email' => 'required|email|unique:users',
             'password' => 'required|min:8|confirmed',
         ]);
+
+
+
         $user = new User();
         $user->firstname = $request->firstname;
         $user->lastname = $request->lastname;
@@ -33,9 +78,11 @@ class ActionHandleController extends Controller
         $user->email = $request->email;
         $user->password = Hash::make($request->password);
 
+
         if($user->save()){
             return json_encode(['user'=>$user]);
         }
+
     }
     /**
      * Show the form for creating a new resource.
