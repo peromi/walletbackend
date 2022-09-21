@@ -143,22 +143,7 @@ Route::put('/edit-beneficiary/{id}', function(Request $request, $id){
     });
 // Registration
 // https://wallet.com/api-8908373784/new-register
-Route::post('/new-register', function(Request $request){
-    // Register a new user
-
-            $user = new User();
-            $user->firstname = $request->firstname;
-            $user->lastname = $request->lastname;
-            $user->username = $request->username;
-            $user->mobile =$request->mobile;
-            $user->email = $request->email;
-            $user->password = Hash::make($request->password);
-
-            if($user->save()){
-                return json_encode(['user'=>$user]);
-            }
-
-});
+Route::post('/new-register', [ActionHandleController::class, 'createNewUser']);
 
 Route::post('/new-customer-paystack', function(Request $request){
 
