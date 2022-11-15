@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AddressDetail;
+use App\Models\Document;
 use App\Models\User;
 use Carbon\Exceptions\Exception;
 use Illuminate\Http\Request;
@@ -21,17 +22,117 @@ class ActionHandleController extends Controller
         //
     }
 
+    public function addDocument(Request $request){
+        $this->validate($request,[
+            'type' => 'required', 
+            'data' => 'image|mimes:jpg,png, jpeg|max:3048',
+            'back' => 'image|mimes:jpg,png, jpeg|max:3048'
+        ]);
+
+
+        $docs = new Document();
+        $docs->user_id = $request->input('id');
+        $docs->type = $request->input('type');
+       
+       
+       
+        
+
+        if($request->hasFile("data")){
+
+            // Address 
+            $fileData = $request->file("data")->getClientOriginalName();
+            $fileName = pathinfo($fileData, PATHINFO_FILENAME);
+
+            $ext = pathinfo($fileData, PATHINFO_EXTENSION);
+            $fileToSave = md5($fileName.time()).".".$ext;
+
+            $request->file('data')->storeAs("/public/document/", $fileToSave);
+
+           
+            
+
+            $docs->data = $fileToSave;
+            
+        }
+        if($request->hasFile("back")){
+
+            // Address 
+            $fileData = $request->file("back")->getClientOriginalName();
+            $fileName = pathinfo($fileData, PATHINFO_FILENAME);
+
+            $ext = pathinfo($fileData, PATHINFO_EXTENSION);
+            $fileToSave = md5($fileName.time()).".".$ext;
+
+            $request->file('back')->storeAs("/public/document/", $fileToSave);
+
+           
+            
+
+            $docs->back = $fileToSave;
+            
+        }
+        
+
+
+        if($docs->save()){
+            return json_encode(['message'=>'Successful.']);
+        }else{
+            return json_encode(['message'=>'Something went wrong']);
+        }
+
+
+
+
+
+    }
+
     public function addAddress(Request $request){
-        $house = $request->house;
-        $street = $request->street;
+        $this->validate($request,[
+            'state' => 'required',
+            'lga' => 'required',
+            'address' => 'required',
+            'street' => 'required|image|mimes:jpg,png, jpeg|max:3048',
+            'house' => 'required|image|mimes:jpg,png, jpeg|max:3048'
+        ]);
+
+
+         
+       
         $address = new AddressDetail();
         $address->user_id = $request->input('id');
         $address->state = $request->input('state');
         $address->lga = $request->input('lga');
         $address->address = $request->input('address');
         $address->landmark = $request->input('landmark');
-        $address->house = $house;
-        $address->street = $street;
+
+        if($request->hasFile("house") && $request->hasFile("street")){
+
+            // Address 
+            $fileAddress = $request->file("street")->getClientOriginalName();
+            $fileAddressName = pathinfo($fileAddress, PATHINFO_FILENAME);
+
+            $ext = pathinfo($fileAddress, PATHINFO_EXTENSION);
+            $fileAddressToSave = md5($fileAddressName.time()).".".$ext;
+
+            $request->file('street')->storeAs("/public/street/", $fileAddressToSave);
+
+            $address->street = $fileAddressToSave;
+            
+
+
+            // house
+                        $fileHouse = $request->file("house")->getClientOriginalName();
+                        $fileHouseName = pathinfo($fileHouse, PATHINFO_FILENAME);
+            
+                        $ext = pathinfo($fileHouse, PATHINFO_EXTENSION);
+                        $fileHouseToSave = md5($fileHouseName.time()).".".$ext;
+            
+                        $request->file('house')->storeAs("/public/house/", $fileHouseToSave);
+            
+                $address->house = $fileHouseToSave;
+        }
+        
 
 
             if($address->save()){
@@ -100,6 +201,7 @@ class ActionHandleController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+
     public function store(Request $request)
     {
         //

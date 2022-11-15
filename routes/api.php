@@ -95,21 +95,7 @@ Route::put('/edit-beneficiary/{id}', function(Request $request, $id){
     });
 
     // Upload documents by user
-    Route::post('/add-document', function(Request $request){
-        $docs = new Document();
-        $docs->user_id = $request->input('id');
-        $docs->type = $request->input('type');
-        $docs->data = $request->input('data');
-        if($request->input('back') != null){
-            $docs->data = $request->input('back');
-        }
-
-        if($docs->save()){
-            return json_encode(['message'=>'Successful.']);
-        }else{
-            return json_encode(['message'=>'Something went wrong']);
-        }
-    });
+    Route::post('/add-document', [ActionHandleController::class,'addDocument']);
 
     // get documents
     Route::get('/get-document/{id}', function($id){
