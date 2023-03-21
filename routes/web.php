@@ -17,6 +17,21 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/cal', function(){
+    $answer = 12000 + floatval(("-346.90"));
+
+    return $answer;
+});
+
+Route::get('/migrate', function () {
+    Artisan::call('migrate --seed');
+    Artisan::call('storage:link');
+    // Artisan::call('view:clear');
+    // Artisan::call('config:clear');
+    // Artisan::call('route:clear');
+    return "Database migrate";
+});
+
 Route::get('/reset', function () {
     Artisan::call('migrate:fresh');
     Artisan::call('storage:link');

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\AddressDetail;
+use App\Models\Beneficiary;
 use App\Models\Document;
 use App\Models\User;
+use App\Models\Folder;
+use App\Models\Referrals;
 use Carbon\Exceptions\Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -26,7 +29,7 @@ class ActionHandleController extends Controller
         $this->validate($request,[
             'type' => 'required', 
             'data' => 'image|mimes:jpg,png, jpeg|max:3048',
-            'back' => 'image|mimes:jpg,png, jpeg|max:3048'
+            // 'back' => 'image|mimes:jpg,png, jpeg|max:3048'
         ]);
 
 
@@ -76,7 +79,7 @@ class ActionHandleController extends Controller
 
 
         if($docs->save()){
-            return json_encode(['message'=>'Successful.']);
+            return json_encode(['message'=>'Successful.', 'doc'=>$docs]);
         }else{
             return json_encode(['message'=>'Something went wrong']);
         }
@@ -136,7 +139,7 @@ class ActionHandleController extends Controller
 
 
             if($address->save()){
-                return json_encode(['message'=>'Address verified.']);
+                return json_encode(["address"=>$address,'message'=>'Address verified.']);
             }else{
                 return json_encode(['message'=>'Something went wrong']);
             }
@@ -155,8 +158,14 @@ class ActionHandleController extends Controller
         $user = User::where("mobile", $request->mobile)->first();
         if(!$user || !password_verify($request->password, $user->password)){
             return json_encode(['message' => 'Incorrect credentials, try again.']);
+        }else{
+            $data = Folder::where("user_id", $user->id)->first();
+            $address = AddressDetail::where('user_id', $user->id)->first();
+            $docs = Document::where('user_id', $user->id)->first();
+            $beneficiary = Beneficiary::where('user_id',$user->id)->get(); 
+           return json_encode(['user'=>$user, 'data'=>$data, 'beneficiary'=>$beneficiary, 'address'=>$address, 'docs'=>$docs]);  
         }
-        return json_encode(['user'=>$user]);
+       
     }
 
     public function createNewUser(Request $request){
@@ -168,6 +177,9 @@ class ActionHandleController extends Controller
             'email' => 'required|email|unique:users',
             'password' => 'required|min:8|confirmed',
         ]);
+
+
+ 
 
 
 
@@ -185,6 +197,48 @@ class ActionHandleController extends Controller
         }
 
     }
+
+    public function createNewUserThroughReferral(Request $request, $username){
+        $this->validate($request,[
+                'firstname' => 'required|string|max:255',
+                'lastname' => 'required|string|max:255',
+                'username' => 'required|string|unique:users',
+                'mobile' => 'required|numeric|unique:users',
+                'email' => 'required|email|unique:users',
+                'password' => 'required|min:8|confirmed',
+            ]);
+    
+    
+     
+
+            
+            $referedUser = User::where("username", $username)->first();
+
+    
+    
+            $user = new User();
+            $user->firstname = $request->firstname;
+            $user->lastname = $request->lastname;
+            $user->username = $request->username;
+            $user->mobile =$request->mobile;
+            $user->email = $request->email;
+            $user->password = Hash::make($request->password);
+    
+    
+            if($user->save()){
+                $referral = new Referrals();
+                $referral->user_id = $referedUser->user_id;
+                $referral->name = $user->username;
+                $referral->save();
+
+                $folder = Folder::where("user_id", $referedUser->id)->first();
+                $folder->account_balance = floatval($folder->account_balance)  + floatval("500");
+                $folder->save();
+
+                return json_encode(['user'=>$user]);
+            }
+    
+        }
     /**
      * Show the form for creating a new resource.
      *
